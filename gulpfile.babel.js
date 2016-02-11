@@ -25,9 +25,8 @@ function appBundler () {
 				ignore: [ '**/src/*.spec.js' ]
 			})
 		)
-		.transform(babelify, { presets: [ 'es2015' ] })
-		.external('moment')
-		//.require('./src/app.js', { entry: true });
+		.transform(babelify)
+		.external('moment');
 
 	return globSync('./src/**/!(*.spec).js')
 		.reduce((bundler, file) => bundler.require(file, { expose: true }), bundler);
