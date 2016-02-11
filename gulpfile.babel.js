@@ -10,30 +10,32 @@ import { sync as globSync} from 'glob';
 
 process.env.NODE_PATH = path.join(path.resolve('.'), 'src');
 
-function vendorBundler () {
-	const bundler = browserify({})
-		.require('moment');
+const vendors = Object.keys(require('./package.json').dependencies);
 
-	return bundler;
-}
+const vendorBundler = () =>
+	vendors.reduce((bundler, file) =>
+		bundler.require(file), browserify({}));
 
-function appBundler () {
-	const bundler = browserify({ debug: true })
+const appBundler = (debug) => {
+	let bundler = browserify({ debug })
 		.transform(
 			istanbul({
 				instrumenter: isparta,
 				ignore: [ '**/src/*.spec.js' ]
 			})
 		)
-		.transform(babelify)
-		.external('moment');
+		.transform(babelify);
 
-	return globSync('./src/**/!(*.spec).js')
-		.reduce((bundler, file) => bundler.require(file, { expose: true }), bundler);
+	bundler = globSync('./src/**/!(*.spec).js')
+		.reduce((bundler, file) =>
+			bundler.require(file, { expose: true }), bundler)
+
+	return vendors.reduce((bundler, file) =>
+		bundler.external(file), bundler);
 }
 
 gulp.task('build:app', () => {
-	return appBundler()
+	return appBundler(true)
 		.bundle()
 		.pipe(vss('app.js'))
 		.pipe(gulp.dest('./build'));
@@ -46,8 +48,6 @@ gulp.task('build:vendor', () => {
 		.pipe(gulp.dest('./build'));
 });
 
-gulp.task('build', [ 'build:app', 'build:vendor' ]);
-
-gulp.task('test', (done) => {
+gulp.task('test', [ 'build:app', 'build:vendor' ], (done) => {
 	new KarmaServer({ configFile: `${__dirname}/karma.conf.js` }, done).start();
 });
