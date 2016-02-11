@@ -20,7 +20,7 @@ module.exports = function(config) {
       'karma-chrome-launcher',
       'karma-coverage'
     ],
-    browsers: [ 'Chrome' ],
+    browsers: [ 'PhantomJS' ],
     coverageReporter: {
       reporters: [
         { type: 'text' },
